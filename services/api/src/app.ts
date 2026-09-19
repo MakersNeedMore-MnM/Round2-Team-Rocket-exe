@@ -11,6 +11,10 @@ import trustRoutes from "./routes/trust.routes.js"
 import reportRoutes from "./routes/report.routes.js"
 import databaseRoutes from "./routes/database.routes.js"
 import scanRoutes from "./routes/scan.routes.js";
+import ingredientRoutes from "./routes/ingredient.routes.js";
+import claimRoutes from "./routes/claim.routes.js";
+import verificationRoutes from "./routes/verification.routes.js";
+
 const app = express()
 
 app.use(cors())
@@ -33,5 +37,8 @@ app.use("/api/v1/trust", trustRoutes)
 app.use("/api/v1/reports", reportRoutes)
 app.use("/api/v1/database", databaseRoutes)
 app.use("/api/v1/scans", scanRoutes)
+app.use("/api/v1/ingredients", ingredientRoutes)
+app.use("/api/v1/claims", claimRoutes)
+app.use("/api/v1/verifications", verificationRoutes)
 
 export default app
