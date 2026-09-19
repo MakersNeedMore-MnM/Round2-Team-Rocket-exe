@@ -14,6 +14,8 @@ import scanRoutes from "./routes/scan.routes.js";
 import ingredientRoutes from "./routes/ingredient.routes.js";
 import claimRoutes from "./routes/claim.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
+import analysisRoutes from "./routes/analysis.routes.js";
+import ingredientAnalysisRoutes from "./routes/ingredient-analysis.routes.js";
 
 const app = express()
 
@@ -40,5 +42,10 @@ app.use("/api/v1/scans", scanRoutes)
 app.use("/api/v1/ingredients", ingredientRoutes)
 app.use("/api/v1/claims", claimRoutes)
 app.use("/api/v1/verifications", verificationRoutes)
+app.use("/api/v1/analysis", analysisRoutes)
+app.use(
+  "/api/v1/ingredients",
+  ingredientAnalysisRoutes,
+);
 
 export default app
