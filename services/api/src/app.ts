@@ -16,6 +16,9 @@ import claimRoutes from "./routes/claim.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
 import analysisRoutes from "./routes/analysis.routes.js";
 import ingredientAnalysisRoutes from "./routes/ingredient-analysis.routes.js";
+import scanIngredientAnalysisRoutes from "./routes/scan-ingredient-analysis.routes.js";
+import nutritionPredictionRoutes from "./routes/nutrition-prediction.routes.js";
+import healthRiskRoutes from "./routes/health-risk.routes.js";
 
 const app = express()
 
@@ -47,5 +50,13 @@ app.use(
   "/api/v1/ingredients",
   ingredientAnalysisRoutes,
 );
-
+app.use(
+  "/api/v1/scan-ingredients",
+  scanIngredientAnalysisRoutes,
+);
+app.use(
+  "/api/v1/nutrition",
+  nutritionPredictionRoutes,
+);
+app.use("/api/v1/health-risk", healthRiskRoutes);
 export default app

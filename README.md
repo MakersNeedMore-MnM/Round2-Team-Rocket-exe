@@ -131,43 +131,49 @@ Express API
 
 ## Roadmap
 
-- [ ] Nutrition and food analysis.
-- [ ] Food recognition.
-- [ ] Nutritional information and insights.
-- [ ] User interface improvements.
-- [ ] Backend API integration.
+- Nutrition Normalization       ✅
+- Nutri-Score ML                 ✅
+- Ingredient Parser              ✅
+- Allergen Detection             ✅
+- Preservative Detection        ✅
+- Color Detection                ✅
+- Additive Detection             ✅
+- Sweetener Detection            ✅
+- Flavouring Detection           ✅
+- Raising Agent Detection        ✅
+- INS/E-number Detection         ✅
+- INS/E-number Mapping           ✅
+- Ingredient Analysis API        ✅
+- Database → Ingredient Analysis ✅
 
 ```
-                 FOOD LABEL
-                     │
-                     ▼
-                    OCR
-                     │
-          ┌──────────┴──────────┐
-          ▼                     ▼
-    Nutrition Text        Ingredients Text
-          │                     │
-          ▼                     ▼
-    Normalization        Ingredient Parser
-          │                     │
-          ▼                     ├── Allergens
-    Random Forest               ├── Colors
-          │                     ├── Preservatives
-          ▼                     ├── Additives
-     Nutri-Score                ├── Sweeteners
-                                ├── Flavouring
-                                └── Other agents
-                                │
-                                ▼
-                         Evidence Engine
-                                │
-                ┌───────────────┴───────────────┐
-                ▼                               ▼
-          Evidence status                Explanation
-                │                               │
-                └───────────────┬───────────────┘
-                                ▼
-                         TRUST / REPORT
+                   FOOD LABEL
+                        │
+                        ▼
+                       OCR
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
+         Nutrition            Ingredients
+              │                   │
+              ▼                   ▼
+       Normalize 100g      Ingredient Analysis
+              │             ├── Allergens
+              ▼             ├── Preservatives
+       Random Forest        ├── Colors
+              │             ├── Additives
+              ▼             └── Sweeteners
+        Nutri-Score
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                   Claims/Evidence
+                        │
+                        ▼
+                   Trust Analysis
+                        │
+                        ▼
+                     Report
 
 ```
 

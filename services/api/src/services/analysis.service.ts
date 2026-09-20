@@ -1,5 +1,10 @@
 import prisma from "../config/database.js";
+import { getMissingNutritionFeatures } from "./nutrition-feature-validation.service.js";
 import { calculateTrustScore } from "./trust.service.js";
+import { analyzeIngredients } from "./ingredient-analysis.service.js";
+import { mapNutritionFactsToInput } from "./nutrition-fact-mapper.service.js";
+import { predictNutrition } from "./nutrition-prediction.service.js";
+import { generateRecommendations } from "./recommendation.service.js";
 
 export async function analyzeScan(scanId: string) {
   const scan = await prisma.scan.findUnique({
@@ -29,16 +34,48 @@ export async function analyzeScan(scanId: string) {
   }
 
   const claims = scan.labelData.claims;
+  const ingredients = scan.labelData.ingredients;
 
+  const ingredientText = ingredients
+    .map((ingredient) => ingredient.name)
+    .join(", ");
+
+  const ingredientAnalysis =
+    ingredients.length > 0 ? analyzeIngredients(ingredientText) : null;
+
+  const nutritionMapping = mapNutritionFactsToInput(
+    scan.labelData.nutritionFacts,
+  );
+
+  const missingNutritionFeatures = getMissingNutritionFeatures(
+    nutritionMapping.nutrition,
+  );
+
+  const nutritionPredictionStatus =
+    missingNutritionFeatures.length === 0 ? "READY" : "INCOMPLETE";
+
+  let nutritionPrediction = null;
+
+  if (
+    nutritionPredictionStatus === "READY" &&
+    nutritionMapping.servingSizeGrams !== undefined
+  ) {
+    nutritionPrediction = await predictNutrition({
+      servingSizeGrams: nutritionMapping.servingSizeGrams,
+      nutrition: nutritionMapping.nutrition,
+    });
+  }
   const verificationScores = claims.flatMap((claim) =>
     claim.verifications.map(
       (verification) =>
         verification.score ??
-        ({
-          VERIFIED: 1,
-          UNCERTAIN: 0.5,
-          FLAGGED: 0,
-        } as const)[verification.status],
+        (
+          {
+            VERIFIED: 1,
+            UNCERTAIN: 0.5,
+            FLAGGED: 0,
+          } as const
+        )[verification.status],
     ),
   );
 
@@ -66,54 +103,37 @@ export async function analyzeScan(scanId: string) {
     ),
   );
 
-  const recommendations: string[] = [];
-
-  if (flaggedClaims.length > 0) {
-    recommendations.push(
-      "Review claims flagged during evidence verification.",
-    );
-  }
-
-  if (claims.length === 0) {
-    recommendations.push(
-      "No claims were detected. Additional label analysis may be required.",
-    );
-  }
-
-  if (scan.labelData.nutritionFacts.length === 0) {
-    recommendations.push(
-      "Nutrition information was not available in the extracted label data.",
-    );
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push(
-      "No immediate verification issues were identified.",
-    );
-  }
+  const structuredRecommendations = generateRecommendations({
+    healthRisk: nutritionPrediction?.healthRisk ?? null,
+    ingredientAnalysis,
+    flaggedClaims: flaggedClaims.length,
+    claimsAnalyzed: claims.length,
+    nutritionFactsAvailable: scan.labelData.nutritionFacts.length > 0,
+  });
 
   const summary =
     claims.length > 0
       ? `Analyzed ${claims.length} label claim(s) using available evidence verification.`
       : "Label analysis completed, but no claims were available for verification.";
 
+  const reportRecommendations = structuredRecommendations.map(
+    (recommendation) => recommendation.message,
+  );
+
   const report = await prisma.report.upsert({
-    where: {
-      scanId,
-    },
+    where: { scanId },
     update: {
       summary,
       riskLevel,
-      recommendations,
+      recommendations: reportRecommendations,
     },
     create: {
       scanId,
       summary,
       riskLevel,
-      recommendations,
+      recommendations: reportRecommendations,
     },
   });
-
   const trustScore = await calculateTrustScore(report.id);
 
   return {
@@ -126,6 +146,22 @@ export async function analyzeScan(scanId: string) {
       flaggedClaims: flaggedClaims.length,
       averageScore,
       riskLevel,
+
+      ingredientsAnalyzed: ingredients.length,
+      ingredientAnalysis,
+
+      nutrition: {
+        factsAnalyzed: scan.labelData.nutritionFacts.length,
+        mappedInput: nutritionMapping.nutrition,
+        servingSizeGrams: nutritionMapping.servingSizeGrams,
+      },
+      nutritionPrediction: {
+        status: nutritionPredictionStatus,
+        missingFeatures: missingNutritionFeatures,
+        result: nutritionPrediction,
+      },
+
+      recommendations: structuredRecommendations,
     },
   };
 }
